@@ -21,3 +21,5 @@ vesting-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+/grants.json
