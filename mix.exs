@@ -8,6 +8,7 @@ defmodule Vesting.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       package: [
+        files: ~w(grants.json.example lib .formatter.exs mix.exs README*),
         licenses: ["Apache-2.0"],
         links: %{"GitHub" => "https://github.com/spencerolson/vesting"}
       ],
