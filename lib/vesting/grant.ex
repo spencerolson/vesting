@@ -17,39 +17,49 @@ defmodule Vesting.Grant do
   @price_per_unit 23.60
 
   def add_events(grant, events \\ %{}) do
-    add_events(grant, grant.start, events)
+    maybe_add_event(grant.start, grant, events)
   end
 
-  defp add_events(grant, date, events) do
+  defp maybe_add_event(date, grant, events) do
     next_vest = next_vest(date, grant)
     final_vest = final_vest(grant)
+    today = Date.utc_today()
 
-    if Date.compare(next_vest, final_vest) == :gt do
-      events
-    else
-      units = units_per_vest(grant)
-      dollars = round(units * @price_per_unit)
+    cond do
+      Date.compare(next_vest, final_vest) == :gt ->
+        events
 
-      events =
-        Map.update(
-          events,
-          next_vest,
-          {dollars, [grant.name]},
-          fn {sum, names} ->
-            {sum + dollars, [grant.name | names]}
-          end
-        )
+      Date.compare(next_vest, today) == :lt ->
+        maybe_add_event(next_vest, grant, events)
 
-      add_events(grant, next_vest, events)
+      true ->
+        add_event(next_vest, grant, events)
     end
+  end
+
+  defp add_event(date, grant, events) do
+    units = units_per_vest(grant)
+    dollars = round(units * @price_per_unit)
+
+    new_events =
+      Map.update(
+        events,
+        date,
+        {dollars, [grant.name]},
+        fn {sum, names} ->
+          {sum + dollars, [grant.name | names]}
+        end
+      )
+
+    maybe_add_event(date, grant, new_events)
   end
 
   defp final_vest(grant) do
     Date.shift(grant.start, year: grant.years)
   end
 
-  defp next_vest(cur_date, grant) do
-    Date.shift(cur_date, month: grant.every_x_months)
+  defp next_vest(date, grant) do
+    Date.shift(date, month: grant.every_x_months)
   end
 
   defp units_per_vest(grant) do
