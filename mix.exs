@@ -13,7 +13,12 @@ defmodule Vesting.MixProject do
         links: %{"GitHub" => "https://github.com/spencerolson/vesting"}
       ],
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      releases: [
+        vesting: [
+          steps: [&copy_to_overlays/1, :assemble, :tar]
+        ]
+      ]
     ]
   end
 
@@ -29,5 +34,14 @@ defmodule Vesting.MixProject do
     [
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
+  end
+
+  defp copy_to_overlays(release) do
+    filename = Application.fetch_env!(:vesting, :grants_file)
+
+    case File.copy(filename, "rel/overlays/#{filename}") do
+      {:ok, _} -> release
+      {:error, reason} -> raise "\nFailed to copy file `#{filename}`\nReason: #{inspect(reason)}"
+    end
   end
 end
